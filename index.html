@@ -1,0 +1,228 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <title>HNIX 건강보험료 정산금액 계산기(2024년용)</title>
+  <style>
+    body {
+      font-family: sans-serif;
+      max-width: 1000px;
+      margin: auto;
+      padding: 20px;
+      background-color: #FCFCFC;
+      display: flex;
+      justify-content: space-between;
+    }
+    .left {
+      width: 700px;
+    }
+    .right {
+      width: 500px;
+      padding-left: 30px;
+      font-size: 0.9em;
+      color: #7F7F7F;
+    }
+    label {
+      display: inline-block;
+      width: 350px;
+      margin-top: 8px;
+      vertical-align: top;
+      color: #1C1C1C;
+    }
+    input[type="text"], input[type="date"], select {
+      width: 200px;
+      padding: 6px;
+      margin-bottom: 5px;
+      border: 1px solid #7F7F7F;
+      border-radius: 4px;
+    }
+    input[type="number"]::-webkit-outer-spin-button,
+    input[type="number"]::-webkit-inner-spin-button {
+      -webkit-appearance: none;
+      margin: 0;
+    }
+    input[type="number"] {
+      width: 200px;
+      padding: 6px;
+      margin-bottom: 5px;
+      border: 1px solid #7F7F7F;
+      border-radius: 4px;
+      -moz-appearance: textfield;
+    }
+    .row {
+      margin-bottom: 15px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+    button {
+      padding: 6px 12px;
+      margin-top: 20px;
+      margin-right: 5px;
+      background-color: #215F9A;
+      color: white;
+      border: none;
+      border-radius: 2px;
+      cursor: pointer;
+    }
+    button:hover {
+      background-color: #1a4a76;
+    }
+    .result {
+      margin-top: 20px;
+      background: #FAFAFA;
+      padding: 15px;
+      border: 2px dashed #7F7F7F;
+      border-radius: 2px;
+    }
+    .split-tabs button {
+      padding: 6px 10px;
+      margin-right: 5px;
+      border: 1px solid #7F7F7F;
+      background: #f9f9f9;
+      cursor: pointer;
+      border-radius: 4px;
+      color: #215F9A;
+    }
+    .split-tabs button.selected {
+      background-color: #FDB813;
+      color: white;
+      border-color: #e2a500;
+    }
+    h2 {
+      color: #1C1C1C;
+      font-size: 20px;
+    }
+    .small-red {
+      font-size: 0.8em;
+      color: red;
+    }
+  </style>
+  <script>
+    let selectedSplit = 0;
+
+    function selectSplit(n) {
+      selectedSplit = n;
+      document.querySelectorAll(".split-tabs button").forEach(btn => btn.classList.remove("selected"));
+      document.querySelectorAll(".split-tabs button")[n - 1].classList.add("selected");
+    }
+
+    const formatNumber = (n) => n.toLocaleString();
+    const parseNumber = (val) => parseInt(val.replaceAll(",", "").trim()) || 0;
+
+    document.addEventListener("DOMContentLoaded", () => {
+      document.querySelectorAll('input[type="text"]').forEach(el => {
+        el.addEventListener("input", () => {
+          const val = el.value.replaceAll(",", "").replace(/[^0-9]/g, "");
+          if (val) el.value = parseInt(val).toLocaleString();
+        });
+      });
+    });
+
+    function calculate() {
+      const name = document.getElementById("name").value.trim();
+      const joinDateStr = document.getElementById("joinDate").value;
+      const salary = parseNumber(document.getElementById("salary").value);
+      const workMonth = parseInt(document.getElementById("workMonth").value);
+      const healthPaid = parseNumber(document.getElementById("healthPaid").value);
+      const carePaid = parseNumber(document.getElementById("carePaid").value);
+
+      if (!name || !salary || !workMonth || !selectedSplit || !joinDateStr) {
+        alert("필수 입력값이 누락되었습니다!");
+        return;
+      }
+
+      const joinDate = new Date(joinDateStr);
+      let payMonths = workMonth;
+      if (joinDate.getFullYear() === 2024 && joinDate.getDate() > 1) {
+        payMonths -= 1;
+      }
+
+      const monthlyBase = Math.floor(salary / workMonth);
+      const healthUnit = Math.floor((monthlyBase * 0.03545) / 10) * 10;
+      const healthTotal = healthUnit * payMonths;
+      const healthDue = healthTotal - healthPaid;
+
+      const careUnit = Math.floor((healthUnit * 0.1295) / 10) * 10;
+      const careTotal = careUnit * payMonths;
+      const careDue = careTotal - carePaid;
+
+      const healthPerMonth = Math.ceil(healthDue / selectedSplit);
+      const carePerMonth = Math.ceil(careDue / selectedSplit);
+
+      document.getElementById("result").innerHTML = `
+        <b>정산보험료</b><br>
+        건강: ${formatNumber(healthDue)}원 → 월 ${formatNumber(healthPerMonth)}원<br>
+        장기요양: ${formatNumber(careDue)}원 → 월 ${formatNumber(carePerMonth)}원
+      `;
+    }
+
+    function submitForm() {
+      const name = document.getElementById("name").value.trim();
+      if (!name || !selectedSplit) {
+        alert("이름과 분할횟수를 입력해주세요.");
+        return;
+      }
+
+      const url = "https://script.google.com/macros/s/AKfycbwM7LHuugBPrLp7K97oGjBZIojGlVRUQZazbhSgqIUvv14ek8V1IqDFKUe4PDMwV3F3/exec";
+      fetch(`${url}?mode=submit&name=${encodeURIComponent(name)}&split1=${selectedSplit}&split2=`, {
+        method: "GET",
+      })
+        .then(res => res.text())
+        .then(msg => alert(msg))
+        .catch(err => {
+          alert("서버 오류가 발생했습니다.");
+          console.error("제출 오류:", err);
+        });
+    }
+  </script>
+</head>
+<body>
+  <div class="left">
+    <h2>2024년도 건강보험 정산금액 계산기</h2>
+
+    <div class="row"><label>이름</label><input type="text" id="name"></div>
+    <div class="row"><label>입사일</label><input type="date" id="joinDate"></div>
+    <div class="row">
+      <label>정산년도 보수총액 <span class="small-red">(총급여계 합계)</span></label>
+      <input type="text" id="salary">
+    </div>
+    <div class="row"><label>정산년도 근무월수</label><input type="number" id="workMonth"></div>
+    <div class="row"><label>건강기납부액 <span class="small-red">(건강보험 합계)</span></label><input type="text" id="healthPaid"></div>
+    <div class="row"><label>장기요양기납부액 <span class="small-red">(장기요양보험료 합계)</span></label><input type="text" id="carePaid"></div>
+
+    <div class="row">
+      <label>분할횟수 선택</label>
+      <div class="split-tabs">
+        <button onclick="selectSplit(1)">1</button>
+        <button onclick="selectSplit(2)">2</button>
+        <button onclick="selectSplit(3)">3</button>
+        <button onclick="selectSplit(4)">4</button>
+        <button onclick="selectSplit(5)">5</button>
+      </div>
+    </div>
+
+    <div class="row"><label></label><button onclick="calculate()">계산하기</button></div>
+    <div class="result" id="result"></div>
+    <div class="row"><label></label><button title="제출 버튼을 누르면 선택하신 분할 횟수가 4월 급여부터 적용됩니다. (여러번 클릭 시 가장 최근 결과값 반영)" onclick="submitForm()">제출하기</button></div>
+  </div>
+
+  <div class="right">
+    <h4>▣ 입력방법 안내</h4>
+    <p><b>①</b> <a href="https://erp.hnix.co.kr/" target="_blank" style="color:#215F9A; text-decoration: underline;">https://erp.hnix.co.kr/</a> 접속</p>
+    <p><b>②</b> 임직원업무관리 → 급여관리 → 연말정산 → <br>개인근로소득원천징수부 메뉴에서 금액 확인</p>
+    <p><b> - 입사일 :</b> HNIX 당사입사일 입력</p>
+    <p><b> - 정산년도 보수총액 :</b> 총급여계 합계</p>
+    <p><b> - 정산년도 근무월수 :</b> 12개월 입력</p>
+    <p> 　(2024년 중도입사자는 입사월부터 12월까지)</p>
+    <p><b> - 건강기납부액 :</b> 건강보험료 합계</p>
+    <p><b> - 장기요양기납부액 :</b> 장기요양보험료 합계</p>
+    <p><b>③</b> 분할횟수 선택 후 <b>계산하기 → 제출하기</b></p>
+    <p class="small-red">※ 장기요양보험료는 월 10~30원 정도 단수 차이가 발생할 수 있습니다</p>
+    <hr>
+    <p><b>※※※ 정산분 계산 없이 분할횟수만 선택하실 경우 ※※※</b></p>
+    <p>이름 입력 후 <b>분할횟수 선택 → [제출하기]</b></p>
+
+  </div>
+</body>
+</html>
