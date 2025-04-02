@@ -181,8 +181,8 @@
   <div class="left">
     <h2>2024년도 건강보험 정산금액 계산기</h2>
 
-    <div class="row"><label>이름</label><input type="text" id="name"></div>
-    <div class="row"><label>입사일</label><input type="date" id="joinDate"></div>
+    <div class="row"><label>이름(필수)</label><input type="text" id="name"></div>
+    <div class="row"><label>입사일</label><input type="date" id="joinDate" maxlength="10"></div>
     <div class="row">
       <label>정산년도 보수총액 <span class="small-red">(총급여계 합계)</span></label>
       <input type="text" id="salary">
@@ -192,7 +192,7 @@
     <div class="row"><label>장기요양기납부액 <span class="small-red">(장기요양보험료 합계)</span></label><input type="text" id="carePaid"></div>
 
     <div class="row">
-      <label>분할횟수 선택</label>
+      <label>분할횟수 선택(필수)</label>
       <div class="split-tabs">
         <button onclick="selectSplit(1)">1</button>
         <button onclick="selectSplit(2)">2</button>
